@@ -1,5 +1,5 @@
 # TFC_Calculator
-Calculator for metal casting in TFC(TerraFirmaCraft)
+Calculator for metal casting in TFC(TerraFirmaCraft)  
 A simple and efficient tool designed for TerraFirmaCraft players to calculate the optimal combination of metal pieces for melting in the furnace.
 
 ## Features
