@@ -1,90 +1,78 @@
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
-from kivy.uix.widget import Widget
+import tkinter as tk
 from itertools import product
 
-class MetalCombinerApp(App):
-    def build(self):
-        main_layout = BoxLayout(orientation='horizontal', padding=10, spacing=10)
+class MetalCombinerApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+        # Disable maximize button
+        self.resizable(0, 0)
+
+        # Main Layout
+        self.main_frame = tk.Frame(self)
+        self.main_frame.pack(padx=10, pady=10)
 
         # Input Section
-        input_layout = BoxLayout(orientation='vertical', spacing=10)
-        self.rich_input = TextInput(hint_text='Rich metal pieces', input_filter='int', multiline=False)
-        self.normal_input = TextInput(hint_text='Normal metal pieces', input_filter='int', multiline=False)
-        self.poor_input = TextInput(hint_text='Poor metal pieces', input_filter='int', multiline=False)
-        self.small_input = TextInput(hint_text='Small metal pieces', input_filter='int', multiline=False)
+        self.rich_input = self.create_entry("Rich metal pieces", 0)
+        self.normal_input = self.create_entry("Normal metal pieces", 1)
+        self.poor_input = self.create_entry("Poor metal pieces", 2)
+        self.small_input = self.create_entry("Small metal pieces", 3)
 
-        # Bind the on_text_validate event to move to the next input
-        self.rich_input.bind(on_text_validate=self.focus_next(self.normal_input))
-        self.normal_input.bind(on_text_validate=self.focus_next(self.poor_input))
-        self.poor_input.bind(on_text_validate=self.focus_next(self.small_input))
-        self.small_input.bind(on_text_validate=self.focus_next(self.rich_input))  # Loops back to the first input
-
-        submit_button = Button(text='Find Combinations')
-        submit_button.bind(on_press=self.show_combinations)
-        input_layout.add_widget(self.rich_input)
-        input_layout.add_widget(self.normal_input)
-        input_layout.add_widget(self.poor_input)
-        input_layout.add_widget(self.small_input)
-        input_layout.add_widget(submit_button)
+        submit_button = tk.Button(self.main_frame, text="Find Combinations", command=self.show_combinations)
+        submit_button.grid(row=4, column=0, pady=10)
 
         # Output Section
-        self.output_layout = GridLayout(cols=4, spacing=20, size_hint_y=None, row_default_height=40, row_force_default=True)
-        self.output_layout.bind(minimum_height=self.output_layout.setter('height'))
+        self.output_frame = tk.Frame(self.main_frame)
+        self.output_frame.grid(row=5, column=0)
 
-        output_container = BoxLayout(orientation='vertical')
-        output_container.add_widget(self.output_layout)
-        output_container.add_widget(Widget())  # Spacer
+    def create_entry(self, hint_text, row):
+        label = tk.Label(self.main_frame, text=hint_text)
+        label.grid(row=row, column=0, sticky="w", pady=5)
+        entry = tk.Entry(self.main_frame)
+        entry.grid(row=row, column=1, pady=5)
+        return entry
 
-        main_layout.add_widget(input_layout)
-        main_layout.add_widget(output_container)
-
-        return main_layout
-
-    def focus_next(self, next_widget):
-        def _focus_next(instance):
-            next_widget.focus = True
-        return _focus_next
-
-    def show_combinations(self, instance):
-        rich = int(self.rich_input.text or 0)
-        normal = int(self.normal_input.text or 0)
-        poor = int(self.poor_input.text or 0)
-        small = int(self.small_input.text or 0)
+    def show_combinations(self):
+        rich = int(self.rich_input.get() or 0)
+        normal = int(self.normal_input.get() or 0)
+        poor = int(self.poor_input.get() or 0)
+        small = int(self.small_input.get() or 0)
 
         combinations = self.find_combinations(rich, normal, poor, small)
         combinations.sort(key=lambda x: sum(x), reverse=True)
         used_combinations = self.use_combinations(rich, normal, poor, small, combinations)
 
         # Clear previous results
-        self.output_layout.clear_widgets()
+        for widget in self.output_frame.winfo_children():
+            widget.destroy()
 
         # Add table headers
         headers = ['Rich', 'Normal', 'Poor', 'Small']
-        for header in headers:
-            self.output_layout.add_widget(Label(text=header, bold=True))
+        for col, header in enumerate(headers):
+            label = tk.Label(self.output_frame, text=header, font=("Arial", 10, "bold"))
+            label.grid(row=0, column=col)
 
         # Add combinations to the table
         if used_combinations:
-            for combo in used_combinations:
-                for value in combo:
-                    self.output_layout.add_widget(Label(text=str(value)))
+            for row, combo in enumerate(used_combinations, start=1):
+                for col, value in enumerate(combo):
+                    label = tk.Label(self.output_frame, text=str(value))
+                    label.grid(row=row, column=col)
         else:
             additional_pieces = self.recommend_additional_pieces(rich, normal, poor, small)
             if additional_pieces:
-                self.output_layout.add_widget(Label(text="Additional pieces needed:"))
-                for _ in range(3):  # Fill the remaining columns
-                    self.output_layout.add_widget(Label(text=""))
-                for piece in additional_pieces:
-                    self.output_layout.add_widget(Label(text=str(piece)))
+                label = tk.Label(self.output_frame, text="Additional pieces needed:")
+                label.grid(row=1, column=0, columnspan=4)
+                headers = ['Rich', 'Normal', 'Poor', 'Small']
+                for col, header in enumerate(headers, start=0):
+                    label = tk.Label(self.output_frame, text=header, font=("Arial", 10, "bold"))
+                    label.grid(row=2, column=col)
+                for col, piece in enumerate(additional_pieces, start=0):
+                    label = tk.Label(self.output_frame, text=str(piece))
+                    label.grid(row=3, column=col)
             else:
-                self.output_layout.add_widget(Label(text="No possible combinations."))
-                for _ in range(3):  # Fill the remaining columns
-                    self.output_layout.add_widget(Label(text=""))
+                label = tk.Label(self.output_frame, text="No possible combinations.")
+                label.grid(row=1, column=0, columnspan=4)
 
     def find_combinations(self, rich, normal, poor, small):
         combinations = product(range(25), repeat=4)
@@ -132,4 +120,6 @@ class MetalCombinerApp(App):
         return best_combo
 
 if __name__ == '__main__':
-    MetalCombinerApp().run()
+    app = MetalCombinerApp()
+    app.title("Metal Combiner")
+    app.mainloop()
