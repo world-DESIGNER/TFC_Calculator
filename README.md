@@ -9,7 +9,7 @@ A simple and efficient tool designed for TerraFirmaCraft players to calculate th
 
 ## Installation
 
-1. Download the `.zip` file from the releases section.
+1. Download the `.zip` file (not the source code one!) from the releases section.
 2. Launch the app and start optimizing your metal crafting!
 
 ## Usage
